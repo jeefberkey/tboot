@@ -45,4 +45,4 @@ Also, the policy it generates is supposed to be failsafe, meaning if tboot were 
 
 - [ ] Lock kernel version in yum
 - [ ] Remove untrusted items from grub
-- [ ] Make tboot only entry and default entry in grub
+- [x] Make tboot only entry and default entry in grub
