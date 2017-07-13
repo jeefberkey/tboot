@@ -8,6 +8,8 @@ Other sources include (in order of perceived helpfulness):
 * https://wiki.gentoo.org/wiki/Trusted_Boot
 * https://fedoraproject.org/wiki/Tboot
 
+## Steps 
+
 1. Enable the TPM
 2. Install trousers and start the tcsd daemon: `yum install -y trousers; systemctl start tcsd`
 3. Own the TPM using the well-known SRK password (`tpm_takewnership -z`)
@@ -26,7 +28,7 @@ Other sources include (in order of perceived helpfulness):
 12. ???
 13. Trusted boot works
 
-# Items to do
+## Items to do
 
 - [ ] Lock kernel version in yum
 - [ ] Remove untrusted items from grub
