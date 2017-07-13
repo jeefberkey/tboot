@@ -9,7 +9,7 @@
 7. Run `./create-lcp-tboot-policy.sh $tpm_owner_password` to create and install policy
 8. Run `grub2-mkconfig -o /etc/grub2.cfg`
 9. Manually edit `/etc/grub2.cfg`:
-  1. Add ``--unrestricted` to the tboot entries
+  1. Add `--unrestricted` to the tboot entries
   2. Add `module /list.data` as the last thing in the grub entry
 10. Reboot
 11. ???
