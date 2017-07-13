@@ -1,6 +1,6 @@
 # Getting Trusted Boot working on EL7
 
-I sources the original versions of these scripts from https://github.com/yocum137/txt-oat/blob/master/scripts
+I sourced the original versions of these scripts from https://github.com/yocum137/txt-oat/blob/master/scripts
 
 Other sources include (in order of perceived helpfulness):
 * https://software.intel.com/sites/default/files/managed/2f/7f/Config_Guide_for_Trusted_Compute_Pools_in_RHEL_OpenStack_Platform.pdf
