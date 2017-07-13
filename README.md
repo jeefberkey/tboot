@@ -12,7 +12,7 @@ Other sources include (in order of perceived helpfulness):
 
 1. Enable the TPM
 2. Install trousers and start the tcsd daemon: `yum install -y trousers; systemctl start tcsd`
-3. Own the TPM using the well-known SRK password (`tpm_takewnership -z`)
+3. Own the TPM using the well-known SRK password (`tpm_takeownership -z`)
 4. Make sure you're running the version of the kernel you will be trusting
 5. Install `tboot`: `yum install -y tboot`
 6. Download the appropriate SINIT for your platform
