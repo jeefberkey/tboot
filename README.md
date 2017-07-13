@@ -38,6 +38,8 @@ tboot docs | fail | |
 fedora wiki | fail | this one used a custom policy, which I don't understand |
 gentoo wiki | fail | this one ignores the kernel in the measurement, which defeats the purpose |
 
+As far as I can tell, the tboot console log is telling me I don't have a MLE policy loaded, but the script provided here explicitly loads one. The error code is available here, along with the lookup table: https://gist.github.com/jeefberkey/f62fa202cebfee99083886ad3d338fc4#file-docs-txt-L228
+Also, the policy it generates is supposed to be failsafe, meaning if tboot were to fail, the boot would continue anyway. However, the host always reboots after tboot fails.
 
 ## Items to do
 
