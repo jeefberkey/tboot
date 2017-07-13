@@ -17,6 +17,6 @@
 
 # Items to do
 
-- [x] Lock kernel version in yum
+- [ ] Lock kernel version in yum
 - [ ] Remove untrusted items from grub
 - [ ] Make tboot only entry and default entry in grub
