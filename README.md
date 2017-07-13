@@ -8,7 +8,7 @@ Other sources include (in order of perceived helpfulness):
 * https://wiki.gentoo.org/wiki/Trusted_Boot
 * https://fedoraproject.org/wiki/Tboot
 
-## Steps 
+## Steps for the OAT process
 
 1. Enable the TPM
 2. Install trousers and start the tcsd daemon: `yum install -y trousers; systemctl start tcsd`
@@ -27,6 +27,17 @@ Other sources include (in order of perceived helpfulness):
 11. Reboot
 12. ???
 13. Trusted boot works
+
+## Status
+
+Strategy | Status | Notes
+-------- | ------ | -----
+combined | fail   | this script
+oat      | incomplete | |
+tboot docs | fail | |
+fedora wiki | fail | this one used a custom policy, which I don't understand |
+gentoo wiki | fail | this one ignores the kernel in the measurement, which defeats the purpose |
+
 
 ## Items to do
 
