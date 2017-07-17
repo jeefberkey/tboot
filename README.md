@@ -16,15 +16,24 @@ Other sources include (in order of perceived helpfulness):
 4. Make sure you're running the version of the kernel you will be trusting
 5. Install `tboot`: `yum install -y tboot`
 6. Download the appropriate SINIT for your platform https://software.intel.com/en-us/articles/intel-trusted-execution-technology
-  1. Extract
-  2. Copy the `.BIN` file to `/boot`
+    1. Extract
+    2. Copy the `.BIN` file to `/boot`
 7. Download these scripts
+7. Copy our `20_linux_tboot` to `/etc/grub.d/20_linux_tboot`
 8. Run `./create-lcp-tboot-policy.sh $tpm_owner_password` to create and install policy
-9. Run `grub2-mkconfig -o /etc/grub2.cfg`
-10. Manually edit `/etc/grub2.cfg`:
-  1. Add `--unrestricted` to the tboot entries
-  2. Add `module /list.data` in the middle
-  3. Make sure the SINIT is the last module loaded in the GRUB configuration
+9. Populate `/etc/default/grub-tboot` like this:
+
+```
+GRUB_CMDLINE_TBOOT=logging=serial,memory,vga
+GRUB_CMDLINE_LINUX_TBOOT=intel_iommu=on
+GRUB_TBOOT_POLICY_DATA=list.data
+```
+
+10. Run `grub2-mkconfig -o /etc/grub2.cfg`
+11. ~~Manually edit `/etc/grub2.cfg`:~~
+    1. ~~Add `--unrestricted` to the tboot entries~~
+    2. ~~Add `module /list.data` in the middle~~
+    3. ~~Make sure the SINIT is the last module loaded in the GRUB configuration~~
 11. Reboot
 12. ???
 13. Trusted boot works
