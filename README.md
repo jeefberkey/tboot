@@ -23,10 +23,39 @@ Other sources include (in order of perceived helpfulness):
 9. Run `grub2-mkconfig -o /etc/grub2.cfg`
 10. Manually edit `/etc/grub2.cfg`:
   1. Add `--unrestricted` to the tboot entries
-  2. Add `module /list.data` as the last thing in the grub entry
+  2. Add `module /list.data` in the middle
+  3. Make sure the SINIT is the last module loaded in the GRUB configuration
 11. Reboot
 12. ???
 13. Trusted boot works
+
+### except from working env:
+```
+### BEGIN /etc/grub.d/20_linux_tboot ###
+submenu "tboot 1.9.4" --unrestricted {
+menuentry 'CentOS Linux GNU/Linux, with tboot 1.9.4 and Linux 3.10.0-514.el7.x86_64' --class centos --class gnu-linux --class gnu --class os --class tboot --unrestricted {
+        insmod part_msdos
+        insmod ext2
+        set root='hd0,msdos1'
+        if [ x$feature_platform_search_hint = xy ]; then
+          search --no-floppy --fs-uuid --set=root --hint-bios=hd0,msdos1 --hint-efi=hd0,msdos1 --hint-baremetal=ahci0,msdos1 --hint='hd0,msdos1'  baeff891-11a5-403b-8592-463f73f5d8b3
+        else
+          search --no-floppy --fs-uuid --set=root baeff891-11a5-403b-8592-463f73f5d8b3
+        fi
+        echo    'Loading tboot 1.9.4 ...'
+        multiboot       /tboot.gz logging=vga,serial,memory vga_delay=10 min_ram=0x2000000 
+        echo    'Loading Linux 3.10.0-514.el7.x86_64 ...'
+        module /vmlinuz-3.10.0-514.el7.x86_64 root=/dev/mapper/VolGroup00-RootVol ro console=ttyS1,57600 console=tty1 crashkernel=auto rd.lvm.lv=VolGroup00/RootVol rd.lvm.lv=VolGroup00/SwapVol fips=1 rhgb quiet rd.shell=0 audit=1 boot=UUID=baeff891-11a5-403b-8592-463f73f5d8b3 intel_iommu=on
+        echo    'Loading initial ramdisk ...'
+        module /initramfs-3.10.0-514.el7.x86_64.img
+        echo    'Loading list.data ...'
+        module /list.data
+        echo    'Loading sinit 2nd_gen_i5_i7_SINIT_51.BIN ...'
+        module /2nd_gen_i5_i7_SINIT_51.BIN
+}
+}
+### END /etc/grub.d/20_linux_tboot ###
+```
 
 ## Status
 
