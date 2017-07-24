@@ -1,6 +1,9 @@
-# Getting Trusted Boot working on EL7
+# Trusted Boot
 
-I sourced the original versions of these scripts from https://github.com/yocum137/txt-oat/blob/master/scripts
+## External Sources
+
+The majority of policy generation was sourced from:
+https://github.com/yocum137/txt-oat/blob/master/scripts
 
 Other sources include (in order of perceived helpfulness):
 * https://software.intel.com/sites/default/files/managed/2f/7f/Config_Guide_for_Trusted_Compute_Pools_in_RHEL_OpenStack_Platform.pdf
@@ -8,20 +11,23 @@ Other sources include (in order of perceived helpfulness):
 * https://wiki.gentoo.org/wiki/Trusted_Boot
 * https://fedoraproject.org/wiki/Tboot
 
-## Steps for the OAT process
+## Preparation
 
-1. Enable the TPM and set up a bios password
-2. Install trousers and start the tcsd daemon: `yum install -y trousers; systemctl start tcsd`
-3. Own the TPM using the well-known SRK password (`tpm_takeownership -z`)
-4. Make sure you're running the version of the kernel you will be trusting
-5. Install `tboot`: `yum install -y tboot`
-6. Download the appropriate SINIT for your platform https://software.intel.com/en-us/articles/intel-trusted-execution-technology
+1. Activate the TPM in the BIOS and set a BIOS password
+2. Ensure VTd is enabled in the BIOS
+3. Boot into the kernel you intend to trust
+4. Install trousers, tpm-tools, tboot and start the tcsd daemon:
+    `yum install -y trousers tpm-tools tboot; systemctl start tcsd`
+5. Own the TPM using the well-known SRK password:
+    `tpm_takeownership -z` 
+6. Download the appropriate SINIT for your platform:
+    `https://software.intel.com/en-us/articles/intel-trusted-execution-technology`
     1. Extract
     2. Copy the `.BIN` file to `/boot`
-7. Download these scripts
-7. Copy our `20_linux_tboot` to `/etc/grub.d/20_linux_tboot`
-8. Run `./create-lcp-tboot-policy.sh $tpm_owner_password` to create and install policy
-9. Populate `/etc/default/grub-tboot` like this:
+
+## EL7
+
+1. Populate `/etc/default/grub-tboot` like this:
 
 ```
 GRUB_CMDLINE_TBOOT=logging=serial,memory,vga
@@ -29,16 +35,18 @@ GRUB_CMDLINE_LINUX_TBOOT=intel_iommu=on
 GRUB_TBOOT_POLICY_DATA=list.data
 ```
 
-10. Run `grub2-mkconfig -o /etc/grub2.cfg`
-11. ~~Manually edit `/etc/grub2.cfg`:~~
+2. Copy `20_linux_tboot` to `/etc/grub.d/20_linux_tboot`
+3. Run `grub2-mkconfig -o /etc/grub2.cfg`
+4. ~~Manually edit `/etc/grub2.cfg`:~~
     1. ~~Add `--unrestricted` to the tboot entries~~
     2. ~~Add `module /list.data` in the middle~~
     3. ~~Make sure the SINIT is the last module loaded in the GRUB configuration~~
-11. Reboot
-12. ???
-13. Trusted boot works
+5. Run `./create-lcp-tboot-policy_el7.sh $tpm_owner_password` to create and install policy
+6. Reboot
+7. Select tboot kernel module
 
-### except from working env:
+### Excerpt from working env:
+
 ```
 ### BEGIN /etc/grub.d/20_linux_tboot ###
 submenu "tboot 1.9.4" --unrestricted {
@@ -52,7 +60,7 @@ menuentry 'CentOS Linux GNU/Linux, with tboot 1.9.4 and Linux 3.10.0-514.el7.x86
           search --no-floppy --fs-uuid --set=root baeff891-11a5-403b-8592-463f73f5d8b3
         fi
         echo    'Loading tboot 1.9.4 ...'
-        multiboot       /tboot.gz logging=vga,serial,memory vga_delay=10 min_ram=0x2000000 
+        multiboot       /tboot.gz logging=vga,serial,memory vga_delay=10 min_ram=0x2000000
         echo    'Loading Linux 3.10.0-514.el7.x86_64 ...'
         module /vmlinuz-3.10.0-514.el7.x86_64 root=/dev/mapper/VolGroup00-RootVol ro console=ttyS1,57600 console=tty1 crashkernel=auto rd.lvm.lv=VolGroup00/RootVol rd.lvm.lv=VolGroup00/SwapVol fips=1 rhgb quiet rd.shell=0 audit=1 boot=UUID=baeff891-11a5-403b-8592-463f73f5d8b3 intel_iommu=on
         echo    'Loading initial ramdisk ...'
@@ -66,6 +74,38 @@ menuentry 'CentOS Linux GNU/Linux, with tboot 1.9.4 and Linux 3.10.0-514.el7.x86
 ### END /etc/grub.d/20_linux_tboot ###
 ```
 
+## EL6
+
+1. Create a tboot grub entry.
+    1. The following entry is based off of vanilla centos 6.9
+    2. Your kernel parameters may vary, and you can add/subtract as needed
+    3. You MUST include intel_iommu=on
+    4. There MUST NOT be more than one space between kernel parameter options
+    5. The SINIT .BIN MUST be specified last in the list
+
+```
+title CentOS-tboot
+        root (hd0,0)
+        kernel /tboot.gz logging=vga,serial,memory vga_delay=10
+        module /vmlinuz-2.6.32-696.el6.x86_64 ro root=/dev/mapper/vg_tpm04-lv_root rd_LVM_LV=vg_tpm04/lv_swap rd_NO_LUKS LANG=en_US.UTF-8 rd_NO_MD rd_LVM_LV=vg_tpm04/lv_root SYSFONT=latarcyrheb-sun16 crashkernel=auto KEYBOARDTYPE=pc KEYTABLE=us rd_NO_DM rhgb quiet intel_iommu=on
+        module /initramfs-2.6.32-696.el6.x86_64.img
+        module /list.data
+        module /2nd_gen_i5_i7_SINIT_51.BIN
+```
+
+2. Run `./create-lcp-tboot-policy_el6.sh $tpm_owner_password` to create and install policy
+3. Reboot
+4. Select tboot kernel module
+
+## Resetting The TPM
+
+1. While the TPM is activated, run `./clear.sh $tpm_owner_password` to release the control registers
+2. Clear the TPM with the `tpm clear` command, or clear in the BIOS
+3. Re-activate the TPM in the BIOS
+4. Reboot
+5. Ensure `tcsd` is running
+6. `tpm_takeownership -z`
+
 ## Status
 
 Strategy | Status | Notes
@@ -76,7 +116,12 @@ tboot docs | fail | |
 fedora wiki | fail | this one used a custom policy, which I don't understand |
 gentoo wiki | fail | this one ignores the kernel in the measurement, which defeats the purpose |
 
-As far as I can tell, the tboot console log is telling me I don't have a MLE policy loaded, but the script provided here explicitly loads one. The error code is available here, along with the lookup table: https://gist.github.com/jeefberkey/f62fa202cebfee99083886ad3d338fc4#file-docs-txt-L228
+In EL6 and EL7, the tboot console log is throwing an error:
+  `AC module error : acm_type=0x1, progress=0x10, error=0x2`
+
+That error is translated to `MLE measurement is not in policy`, with the following doc:
+ `https://gist.github.com/jeefberkey/f62fa202cebfee99083886ad3d338fc4#file-docs-txt-L228`
+
 Also, the policy it generates is supposed to be failsafe, meaning if tboot were to fail, the boot would continue anyway. However, the host always reboots after tboot fails.
 
 ## Items to do
