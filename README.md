@@ -43,7 +43,7 @@ Other sources include (in order of perceived helpfulness):
 1. Populate `/etc/default/grub-tboot` like this, or with your preferred tboot kernel parameters:
 
 ```
-GRUB_CMDLINE_TBOOT=logging=serial,memory,vga
+GRUB_CMDLINE_TBOOT="logging=serial,memory,vga vga_delay=1 min_ram=0x2000000"
 GRUB_CMDLINE_LINUX_TBOOT=intel_iommu=on
 GRUB_TBOOT_POLICY_DATA=list.data
 ```
