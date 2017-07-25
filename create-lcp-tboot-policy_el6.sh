@@ -46,7 +46,7 @@ if [ ! -e /boot/tboot.gz ]; then
 fi
 
 # a. Create hash for tboot.gz and store it in the mle_hash file:
-lcp_mlehash -c "logging=vga,serial,memory vga_delay=10" /boot/tboot.gz > mle_hash
+lcp_mlehash -c "logging=serial,memory,vga vga_delay=1 min_ram=0x2000000" /boot/tboot.gz > mle_hash
 
 # b. Create the policy element for tboot (“mle”), take the input hash from mle_hash, and output to mle_elt:
 lcp_crtpolelt --create --type mle --ctrl 0x00 --minver 17 --out mle.elt mle_hash
@@ -85,6 +85,7 @@ m=`uname -r`
 
 # NOTE: Ajust -n2 per grub.conf ordering
 CMD_LINE="`grep vmlinuz-[23] /boot/grub/grub.conf | head -n2 | tail -n1 | sed -e 's/^[ \t]*//' | cut -d\  -f3-`"
+echo $CMD_LINE
 # The command below refs cmdline with replaces crash kernel auto with a crash kernel value
 #CMD_LINE="ro `cat /proc/cmdline | cut -d ' ' -f 1 --complement` intel_iommu=on"
 #CMD_LINE=$CMD_LINE | sed -e 's/[[:space:]]\+/ /g'
@@ -92,15 +93,16 @@ CMD_LINE="`grep vmlinuz-[23] /boot/grub/grub.conf | head -n2 | tail -n1 | sed -e
 # set the kernel image
 #KERNEL_IMG="`grep vmlinuz-[23] /boot/grub/grub.conf | head -n${n} | tail -n1 | awk '{print $2}'`"
 KERNEL_IMG=`ls /boot/ | grep vmlinuz-[23] | head -n1`
+echo $KERNEL_IMG
 
 # set the initramfs image
 #INITRAMFS_IMG="`grep initramfs-[23] /boot/grub/grub.conf | head -n${n} | tail -n1 | awk '{print $2}'`"
 INITRAMFS_IMG=`ls /boot/ | grep initramfs-[23] | head -n1`
+echo $INITRAMFS_IMG
 
 # finally, create the policy for the images
 # Attempted to resolve the mle policy error:
-#tb_polgen --add --num 0 --pcr 18 --hash image --cmdline "logging=vga,serial,memory vga_delay=10" --image /boot/tboot.gz vl.pol
-tb_polgen --add --num 0 --pcr 18 --hash image --cmdline "$CMD_LINE" --image /boot/${KERNEL_IMG} vl.pol
+tb_polgen --add --num 0 --pcr none --hash image --cmdline "$CMD_LINE" --image /boot/${KERNEL_IMG} vl.pol
 tb_polgen --add --num 1 --pcr 19 --hash image --cmdline "" --image /boot/${INITRAMFS_IMG} vl.pol
 
 # h. Create the TPM NV index for recording boot errors:

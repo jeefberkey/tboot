@@ -11,34 +11,27 @@ Other sources include (in order of perceived helpfulness):
 * https://wiki.gentoo.org/wiki/Trusted_Boot
 * https://fedoraproject.org/wiki/Tboot
 
-## General procedure
-
-1. Enable and take ownership of the TPM
-2. Download and install SINIT
-3. Determine kernel parameters for linux and tboot
-    1. `intel_iommu=on` must be set for linux
-    2. There may only ever be one space between kernel parameters
-4. Create policy
-    1. Policy must be regenerated every time there is a new kernel or the kernel parameters are changed
-5. Create the `tboot` boot entry
-6. Verify that the SINIT is the last module in the `tboot` boot entry
-7. Reboot
-
 ## Preparation
 
 1. Activate the TPM in the BIOS and set a BIOS password
 2. Ensure VTd is enabled in the BIOS
 3. Boot into the kernel you intend to trust
-4. Install trousers, tpm-tools, tboot and start the tcsd daemon:
-    `yum install -y trousers tpm-tools tboot; systemctl start tcsd`
-5. Own the TPM using the well-known SRK password:
-    `tpm_takeownership -z`
-6. Download the appropriate SINIT for your platform:
-    `https://software.intel.com/en-us/articles/intel-trusted-execution-technology`
+4. Install trousers, tpm-tools, tboot:
+    `yum install -y trousers tpm-tools tboot`
+5. Start tcsd and enable at boot
+    1. Systemd: `systemctl start tcsd; systemctl enable tcsd`
+    2. Upstart: `service tcsd start; chkconfig tcsd on`
+6. Download the appropriate SINIT for your platform from [Intel](https://software.intel.com/en-us/articles/intel-trusted-execution-technology)
     1. Extract
     2. Copy the `.BIN` file to `/boot`
+7. Modify your grub configuration
+  * There should be no references to list.data or SINIT modules after this step, they should be
+commented out or non-existent
+  * Your kernel parameters may vary. If they ever change, you will neet to regenerate the policy.
+  * You MUST include `intel_iommu=on`
+  * There MUST NOT be more than one space between kernel parameter options
 
-## EL7
+#### Grub2 Configuration
 
 1. Populate `/etc/default/grub-tboot` like this, or with your preferred tboot kernel parameters:
 
@@ -50,15 +43,32 @@ GRUB_TBOOT_POLICY_DATA=list.data
 
 2. Copy `20_linux_tboot` to `/etc/grub.d/20_linux_tboot`
 3. Run `grub2-mkconfig -o /etc/grub2.cfg`
-4. ~~Manually edit `/etc/grub2.cfg`:~~
-    1. ~~Add `--unrestricted` to the tboot entries~~
-    2. ~~Add `module /list.data` in the middle~~
-4. Make sure the SINIT is the last module loaded in the GRUB configuration
-5. Run `./create-lcp-tboot-policy_el7.sh $tpm_owner_password` to create and install policy
-6. Reboot
-7. Select tboot kernel module
 
-### Excerpt from working env:
+#### Legacy Grub Configuration
+
+1. Modify `/etc/grub.conf` as follows
+
+```
+title CentOS-tboot
+        root (hd0,0)
+        kernel /tboot.gz logging=serial,memory,vga vga_delay=1 min_ram=0x2000000
+        module /vmlinuz-2.6.32-696.el6.x86_64 ro root=/dev/mapper/vg_tpm04-lv_root rd_LVM_LV=vg_tpm04/lv_swap rd_NO_LUKS LANG=en_US.UTF-8 rd_NO_MD rd_LVM_LV=vg_tpm04/lv_root SYSFONT=latarcyrheb-sun16 crashkernel=auto KEYBOARDTYPE=pc KEYTABLE=us rd_NO_DM rhgb quiet intel_iommu=on
+        module /initramfs-2.6.32-696.el6.x86_64.img
+        #module /list.data
+        #module /2nd_gen_i5_i7_SINIT_51.BIN
+```
+
+## Enable TBOOT
+
+1. Reboot
+2. Boot into the tboot kernel. Tboot will fail, but this is expected.
+3. Own the TPM using the well-known SRK password:
+    `tpm_takeownership -z`
+4. Run `./create-lcp-tboot-policy_el<6,7>.sh $tpm_owner_password` to create and install policy
+  * In EL6, adjust `CMD_LINE` head -n based on grub.conf ordering.
+5. Modify the grub configuration and add/uncomment the list.data and SINIT modules
+  * SINIT must be the LAST module specified in grub
+    1. Below is an exerpt from a working configuration (el7)
 
 ```
 ### BEGIN /etc/grub.d/20_linux_tboot ###
@@ -87,28 +97,8 @@ menuentry 'CentOS Linux GNU/Linux, with tboot 1.9.4 and Linux 3.10.0-514.el7.x86
 ### END /etc/grub.d/20_linux_tboot ###
 ```
 
-## EL6
-
-1. Create a tboot grub entry.
-    1. The following entry is based off of vanilla centos 6.9
-    2. Your kernel parameters may vary, and you can add/subtract as needed
-    3. You MUST include intel_iommu=on
-    4. There MUST NOT be more than one space between kernel parameter options
-    5. The SINIT .BIN MUST be specified last in the list
-
-```
-title CentOS-tboot
-        root (hd0,0)
-        kernel /tboot.gz logging=vga,serial,memory vga_delay=10
-        module /vmlinuz-2.6.32-696.el6.x86_64 ro root=/dev/mapper/vg_tpm04-lv_root rd_LVM_LV=vg_tpm04/lv_swap rd_NO_LUKS LANG=en_US.UTF-8 rd_NO_MD rd_LVM_LV=vg_tpm04/lv_root SYSFONT=latarcyrheb-sun16 crashkernel=auto KEYBOARDTYPE=pc KEYTABLE=us rd_NO_DM rhgb quiet intel_iommu=on
-        module /initramfs-2.6.32-696.el6.x86_64.img
-        module /list.data
-        module /2nd_gen_i5_i7_SINIT_51.BIN
-```
-
-2. Run `./create-lcp-tboot-policy_el6.sh $tpm_owner_password` to create and install policy
-3. Reboot
-4. Select tboot kernel module
+6. Reboot
+7. Boot into the tboot kernel.  Tboot should be enabled and active.
 
 ## Resetting The TPM
 
@@ -129,7 +119,7 @@ tboot docs | fail | |
 fedora wiki | fail | this one used a custom policy, which I don't understand |
 gentoo wiki | fail | this one ignores the kernel in the measurement, which defeats the purpose |
 
-In EL6 and EL7, the tboot console log is throwing an error (can be checked with `parse_err` from the `tboot` package):
+In EL6 the tboot console log is throwing an error (can be checked with `parse_err` from the `tboot` package):
     `AC module error : acm_type=0x1, progress=0x10, error=0x2`
 
 That error is translated to `MLE measurement is not in policy`, with the following doc:
