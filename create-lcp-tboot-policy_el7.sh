@@ -38,7 +38,7 @@ fi
 CLEAN_UP=false
 
 if [[ ! -d /root/txt ]]; then
-  mkdir /root/txt
+    mkdir /root/txt
 fi
 cd /root/txt/
 
@@ -85,13 +85,15 @@ CMD_LINE="`cat /proc/cmdline | cut -d ' ' -f 1 --complement` intel_iommu=on"
 
 # set the kernel image
 KERNEL_IMG=`ls /boot/ | grep vmlinuz-[23] | head -n1`
+KERNEL_PATH="/boot/${KERNEL_IMG}"
 
 # set the initramfs image
 INITRAMFS_IMG=`ls /boot/ | grep initramfs-[23] | head -n1`
+INITRAMFS_PATH="/boot/${INITRAMFS_IMG}"
 
 # finally, create the policy for the images
-tb_polgen --add --num 0 --pcr none --hash image --cmdline "$CMD_LINE" --image /boot/${KERNEL_IMG} vl.pol
-tb_polgen --add --num 1 --pcr 19 --hash image --cmdline "" --image /boot/${INITRAMFS_IMG} vl.pol
+tb_polgen --add --num 0 --pcr none --hash image --cmdline "$CMD_LINE" --image ${KERNEL_PATH} vl.pol
+tb_polgen --add --num 1 --pcr 19 --hash image --cmdline "" --image ${INITRAMFS_PATH} vl.pol
 
 echo "h. Create the TPM NV index for recording boot errors"
 tpmnv_defindex -i 0x20000002 -s 8 -pv 0 -rl 0x07 -wl 0x07 -p "$PASSWORD"
@@ -111,13 +113,15 @@ lcp_writepol -i 0x20000001 -f vl.pol -p "$PASSWORD"
 echo "m. Copy list data to /boot/ for use by GRUB"
 cp list.data /boot/
 
+echo ""
 echo "--------------------------------------------------------------------------------"
+echo ""
 echo "Created policy based on these parameters:"
 echo "    owner password:  supplied"
 echo "    tboot cmdline:   ${GRUB_CMDLINE_TBOOT}"
 echo "    kernel cmdline:  ${CMD_LINE}"
-echo "    kernel image:    ${KERNEL_IMG}"
-echo "    initramfs image: ${INITRAMFS_IMG}"
+echo "    kernel image:    ${KERNEL_PATH}"
+echo "    initramfs image: ${INITRAMFS_PATH}"
 
 if [ $CLEAN_UP = "true" ]; then
     rm -f mle_hash mle.elt pcrs pconf.elt list_unsig.lst privkey.pem pubkey.pem list_sig.lst list.pol list.data vl.pol
