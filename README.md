@@ -16,19 +16,22 @@ Other sources include (in order of perceived helpfulness):
 1. Activate the TPM in the BIOS and set a BIOS password
 2. Ensure VTd is enabled in the BIOS
 3. Boot into the kernel you intend to trust
-4. Install trousers, tpm-tools, tboot and start the tcsd daemon:
-    `yum install -y trousers tpm-tools tboot; systemctl start tcsd; chkconfig tcsd on`
-5. Download the appropriate SINIT for your platform from [Intel](https://software.intel.com/en-us/articles/intel-trusted-execution-technology)
+4. Install trousers, tpm-tools, tboot:
+    `yum install -y trousers tpm-tools tboot`
+5. Start tcsd and enable at boot
+    1. Systemd: `systemctl start tcsd; systemctl enable tcsd`
+    2. Upstart: `service tcsd start; chkconfig tcsd on`
+6. Download the appropriate SINIT for your platform from [Intel](https://software.intel.com/en-us/articles/intel-trusted-execution-technology)
     1. Extract
     2. Copy the `.BIN` file to `/boot`
-6. Modify your grub configuration
+7. Modify your grub configuration
   * There should be no references to list.data or SINIT modules after this step, they should be
-commented out or non-existent.
-  * Your kernel parameters may vary, and you can add/subtract as needed
+commented out or non-existent
+  * Your kernel parameters may vary. If they ever change, you will neet to regenerate the policy.
   * You MUST include `intel_iommu=on`
   * There MUST NOT be more than one space between kernel parameter options
 
-#### EL7 Grub Configuration
+#### Grub2 Configuration
 
 1. Populate `/etc/default/grub-tboot` like this, or with your preferred tboot kernel parameters:
 
@@ -41,7 +44,7 @@ GRUB_TBOOT_POLICY_DATA=list.data
 2. Copy `20_linux_tboot` to `/etc/grub.d/20_linux_tboot`
 3. Run `grub2-mkconfig -o /etc/grub2.cfg`
 
-#### EL6 Grub Configuration
+#### Legacy Grub Configuration
 
 1. Modify `/etc/grub.conf` as follows
 
@@ -56,6 +59,7 @@ title CentOS-tboot
 ```
 
 ## Enable TBOOT
+
 1. Reboot
 2. Boot into the tboot kernel. Tboot will fail, but this is expected.
 3. Own the TPM using the well-known SRK password:
