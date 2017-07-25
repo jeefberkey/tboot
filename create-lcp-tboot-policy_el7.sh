@@ -79,7 +79,7 @@ tb_polgen --create --type nonfatal vl.pol
 
 # set the boot CMD_LINE
 # tboot and grub v1 don't play well together (e.g., an extra space between
-# cli options can cause tboot t/o fail), we need to use sed instead of awk.
+# cli options can cause tboot to fail), we need to use sed instead of awk.
 # Apparently this is not an issue with grub2
 CMD_LINE="`cat /proc/cmdline | cut -d ' ' -f 1 --complement` intel_iommu=on"
 
