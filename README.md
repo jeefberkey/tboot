@@ -28,7 +28,7 @@ Other sources include (in order of perceived helpfulness):
   * There should be no references to list.data or SINIT modules after this step, they should be
 commented out or non-existent
   * Your kernel parameters may vary. If they ever change, you will neet to regenerate the policy.
-  * You MUST include `intel_iommu=on`
+  * You MUST include `intel_iommu=on` and `min_ram=0x2000000` if your system has more than 4GB or memory!
   * There MUST NOT be more than one space between kernel parameter options
 
 #### Grub2 Configuration
