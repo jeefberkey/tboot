@@ -1,5 +1,8 @@
 # Trusted Boot
 
+# WARNING
+### The final resting place for these scripts is https://github.com/simp/pupmod-simp-tpm/tree/master/files. These scripts ma ybe out of date with the Puppet module. 
+
 ## External Sources
 
 The majority of policy generation was sourced from:
